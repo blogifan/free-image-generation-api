@@ -1,35 +1,37 @@
-exportar predeterminado {
-  async fetch(solicititud, env) {
-    const API_CLAVE = env.API_CLAVE;
+export default {
+  async fetch(request, env) {
+    const API_KEY = env.API_KEY;
 
-    si (!API_CLAVE) retorno nuevo Respuesta("API_KEY sin configuración", { estatus: 500 });
-
-    // Verificación de clave
-    const url = nuevo URL(solicititud.url);
-    const auth = solicititud.encabezados.get("Autorización");
-    const clave de consulta = url.parámetros de búsqueda.get("clave");
-
-    si (auth !== `Portador ${API_CLAVE}` && clave de consulta!== API_CLAVE) {
-      retorno nuevo Respuesta(„Sin autorizado", { estatus: 401 });
+    if (!API_KEY) {
+      return new Response("API_KEY no configurada", { status: 500 });
     }
 
-    intentar {
-      const { prompt } = await solicititud.json();
+    const url = new URL(request.url);
+    const auth = request.headers.get("Authorization");
+    const queryKey = url.searchParams.get("key");
 
-      const optimizado = `${prompt}, arte lineal simple en blanco y negro, contores sólidos, grupos y llamativos exclusivamente, página de libro para colorear para adultos, alto contraste, sin sombreado, sin degradados, sin colores, fondo blanco, líneas limpias y compatibles con vectores`;
+    if (auth !== `Bearer ${API_KEY}` && queryKey !== API_KEY) {
+      return new Response("Unauthorized", { status: 401 });
+    }
 
-      const resultado = await env.IA.run("@cf/black-forest-labs/flux-1-schnell", {
-        prompt: optimizado,
-        ancho: 1024,
-        alta: 1024,
-        num_pasos: 8
+    try {
+      const { prompt } = await request.json();
+
+      const optimizedPrompt = `${prompt}, simple black and white line art, bold thick solid outlines only, coloring book page for adults, high contrast, no shading, no gradients, no colors, white background, clean vector friendly lines`;
+
+      const result = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", {
+        prompt: optimizedPrompt,
+        width: 1024,
+        height: 1024,
+        num_steps: 8
       });
 
-      retorno nuevo Respuesta(resultado, {
-        encabezados: { "Tipo de contenido": "imagen/jpeg" }
+      return new Response(result, {
+        headers: { "Content-Type": "image/jpeg" }
       });
-    } atrapar (e) {
-      retorno nuevo Respuesta("Error: " + e.mensaje, { estatus: 500 });
+    } catch (err) {
+      return new Response("Error: " + err.message, { status: 500 });
     }
   }
 };
+Abajo escribe un commit message como Update worker.js with FLUX y haz Commit changes.
