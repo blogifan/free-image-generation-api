@@ -1,51 +1,35 @@
-export default {
-    async fetch(request, env) {
-        const API_KEY = env.API_KEY;
-        const url = new URL(request.url);
-        const auth = request.headers.get("Authorization");
+exportar predeterminado {
+  async fetch(solicititud, env) {
+    const API_CLAVE = env.API_CLAVE;
 
-        // 🔐 Simple API key check
-        if (auth !== `Bearer ${API_KEY}`) {
-            return json({ error: "Unauthorized" }, 401);
-        }
+    si (!API_CLAVE) retorno nuevo Respuesta("API_KEY sin configuración", { estatus: 500 });
 
-        // 🚫 Only allow POST requests to /
-        if (request.method !== "POST" || url.pathname !== "/") {
-            return json({ error: "Not allowed" }, 405);
-        }
+    // Verificación de clave
+    const url = nuevo URL(solicititud.url);
+    const auth = solicititud.encabezados.get("Autorización");
+    const clave de consulta = url.parámetros de búsqueda.get("clave");
 
-        try {
-            const { prompt } = await request.json();
+    si (auth !== `Portador ${API_CLAVE}` && clave de consulta!== API_CLAVE) {
+      retorno nuevo Respuesta(„Sin autorizado", { estatus: 401 });
+    }
 
-            if (!prompt) return json({ error: "Prompt is required" }, 400);
+    intentar {
+      const { prompt } = await solicititud.json();
 
-            // Choose model from the following list:
-            // "@cf/blackforestlabs/ux-1-schnell"
-            // "@cf/bytedance/stable-diffusion-xl-lightning"
-            // "@cf/lykon/dreamshaper-8-lcm"
-            // "@cf/runwayml/stable-diffusion-v1-5-img2img"
-            // "@cf/runwayml/stable-diffusion-v1-5-inpainting"
-            // "@cf/stabilityai/stable-diffusion-xl-base-1.0"
+      const optimizado = `${prompt}, arte lineal simple en blanco y negro, contores sólidos, grupos y llamativos exclusivamente, página de libro para colorear para adultos, alto contraste, sin sombreado, sin degradados, sin colores, fondo blanco, líneas limpias y compatibles con vectores`;
 
-            // 🧠 Generate image from prompt
-            const result = await env.AI.run(
-                "@cf/stabilityai/stable-diffusion-xl-base-1.0",
-                { prompt }
-            );
+      const resultado = await env.IA.run("@cf/black-forest-labs/flux-1-schnell", {
+        prompt: optimizado,
+        ancho: 1024,
+        alta: 1024,
+        num_pasos: 8
+      });
 
-            return new Response(result, {
-                headers: { "Content-Type": "image/jpeg" },
-            });
-        } catch (err) {
-            return json({ error: "Failed to generate image", details: err.message }, 500);
-        }
-    },
+      retorno nuevo Respuesta(resultado, {
+        encabezados: { "Tipo de contenido": "imagen/jpeg" }
+      });
+    } atrapar (e) {
+      retorno nuevo Respuesta("Error: " + e.mensaje, { estatus: 500 });
+    }
+  }
 };
-
-// 📦 Function to return JSON responses
-function json(data, status = 200) {
-    return new Response(JSON.stringify(data), {
-        status,
-        headers: { "Content-Type": "application/json" },
-    });
-}
